@@ -11,19 +11,26 @@ type AccountRepo struct {
 }
 
 func (r AccountRepo) Create(a *models.Account) error {
-	return r.DB.Create(a).Error
+	return r.DB.
+		Session(&gorm.Session{FullSaveAssociations: true}).
+		Create(a).Error
 }
 
 func (r AccountRepo) GetByID(id uint) (models.Account, error) {
 	var a models.Account
-	err := r.DB.Preload("Transactions").
+	err := r.DB.
+		Preload("Users").
+		Preload("Transactions").
 		First(&a, id).Error
 	return a, err
 }
 
 func (r AccountRepo) GetByUser(userID uint) ([]models.Account, error) {
 	var list []models.Account
-	err := r.DB.Where("user_id = ?", userID).Find(&list).Error
+	err := r.DB.
+		Joins("JOIN account_users au ON au.account_id = accounts.id").
+		Where("au.user_id = ?", userID).
+		Find(&list).Error
 	return list, err
 }
 

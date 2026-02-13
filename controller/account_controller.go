@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	"assignment2/dto"
-	"assignment2/models"
 	"assignment2/services"
 
 	"github.com/gin-gonic/gin"
@@ -19,7 +18,10 @@ func NewAccountController(s services.AccountService) AccountController {
 	return AccountController{Service: s}
 }
 
+
+//  CREATE JOINT ACCOUNT
 func (ac AccountController) Create(c *gin.Context) {
+
 	var req dto.CreateAccountRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -27,24 +29,24 @@ func (ac AccountController) Create(c *gin.Context) {
 		return
 	}
 
-	acc := models.Account{
-		AccountNumber: req.AccountNumber,
-		UserID:        req.UserID,
-		BranchID:      req.BranchID,
-		Base: models.Base{
-			Status: models.StatusActive,
-		},
-	}
+	acc, err := ac.Service.CreateJointAccount(
+		req.AccountNumber,
+		req.BranchID,
+		req.UserIDs,
+	)
 
-	if err := ac.Service.CreateAccount(&acc); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusCreated, acc)
 }
 
+
+// GET ACCOUNT
 func (ac AccountController) Get(c *gin.Context) {
+
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
@@ -60,7 +62,10 @@ func (ac AccountController) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, acc)
 }
 
+
+// DELETE ACCOUNT
 func (ac AccountController) Delete(c *gin.Context) {
+
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
@@ -75,7 +80,11 @@ func (ac AccountController) Delete(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "deleted"})
 }
 
+
+// DEPOSIT
+
 func (ac AccountController) Deposit(c *gin.Context) {
+
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
@@ -96,7 +105,10 @@ func (ac AccountController) Deposit(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "deposit success"})
 }
 
+
+//  WITHDRAW
 func (ac AccountController) Withdraw(c *gin.Context) {
+
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})

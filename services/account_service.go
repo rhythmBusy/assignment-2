@@ -23,12 +23,40 @@ func NewAccountService(db *gorm.DB) AccountService {
 	}
 }
 
-func (s AccountService) CreateAccount(a *models.Account) error {
-	return s.AccountRepo.Create(a)
+func (s AccountService) CreateJointAccount(
+	accountNumber string,
+	branchID uint,
+	userIDs []uint,
+) (*models.Account, error) {
+
+	var users []models.User
+	if err := s.DB.Where("id IN ?", userIDs).Find(&users).Error; err != nil {
+		return nil, err
+	}
+
+	if len(users) == 0 {
+		return nil, errors.New("no valid users found")
+	}
+
+	acc := models.Account{
+		AccountNumber: accountNumber,
+		BranchID:      branchID,
+		Users:         users,
+		Base: models.Base{
+			Status: models.StatusActive,
+		},
+	}
+
+	err := s.AccountRepo.Create(&acc)
+	return &acc, err
 }
 
 func (s AccountService) GetAccount(id uint) (models.Account, error) {
 	return s.AccountRepo.GetByID(id)
+}
+
+func (s AccountService) Delete(id uint) error {
+	return s.AccountRepo.Delete(id)
 }
 
 func (s AccountService) Deposit(accountID uint, amount float64) error {
@@ -65,9 +93,6 @@ func (s AccountService) Deposit(accountID uint, amount float64) error {
 
 		return txRepo.Create(&txn)
 	})
-}
-func (s AccountService) Delete(id uint) error {
-	return s.AccountRepo.Delete(id)
 }
 
 func (s AccountService) Withdraw(accountID uint, amount float64) error {

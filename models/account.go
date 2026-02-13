@@ -6,11 +6,12 @@ type Account struct {
 	AccountNumber string  `gorm:"size:30;uniqueIndex;not null"`
 	Balance       float64 `gorm:"not null;default:0"`
 
-	UserID uint `gorm:"not null"`
-	User   User
+	
+	Users []User `gorm:"many2many:account_users;"`
 
-	BranchID uint `gorm:"not null"`
+	BranchID uint   `gorm:"not null"`
 	Branch   Branch
 
 	Transactions []Transaction
 }
+
